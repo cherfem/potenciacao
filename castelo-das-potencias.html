@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Castelo das Potências</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:#1a0533;min-height:100vh;overflow-x:hidden;color:#fff}
+#app{width:100%;max-width:780px;margin:0 auto;padding:12px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.screen{width:100%;display:none;flex-direction:column;align-items:center;gap:16px}
+.screen.active{display:flex}
+h1{font-family:'Fredoka One',cursive;font-size:2.6rem;text-align:center;line-height:1.1}
+h2{font-family:'Fredoka One',cursive;font-size:1.8rem;text-align:center}
+.stars-bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:0.2}50%{opacity:1}}
+.card{background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.18);border-radius:20px;padding:24px;width:100%;backdrop-filter:blur(6px)}
+.btn{font-family:'Fredoka One',cursive;font-size:1.1rem;padding:12px 28px;border-radius:50px;border:none;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{transform:scale(1.05)}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:linear-gradient(135deg,#f7c948,#f39c12);color:#1a0533;box-shadow:0 4px 16px rgba(247,201,72,0.4)}
+.btn-purple{background:linear-gradient(135deg,#9b59b6,#6c3483);color:#fff;box-shadow:0 4px 16px rgba(155,89,182,0.4)}
+.btn-green{background:linear-gradient(135deg,#2ecc71,#27ae60);color:#fff;box-shadow:0 4px 16px rgba(46,204,113,0.4)}
+.btn-red{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;box-shadow:0 4px 16px rgba(231,76,60,0.4)}
+.btn-sm{font-size:0.85rem;padding:8px 16px}
+.hearts{display:flex;gap:8px;font-size:1.8rem;animation:heartbeat 2s infinite}
+@keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.heart{transition:all 0.3s}
+.heart.lost{filter:grayscale(1);opacity:0.3;transform:scale(0.8)}
+.hud{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 16px;background:rgba(0,0,0,0.3);border-radius:14px;flex-wrap:wrap;gap:8px}
+.hud-item{display:flex;align-items:center;gap:6px;font-size:0.9rem;font-weight:700}
+.question-box{text-align:center;padding:32px 20px}
+.question-expr{font-family:'Fredoka One',cursive;font-size:3rem;color:#f7c948;margin:12px 0;text-shadow:0 0 20px rgba(247,201,72,0.5)}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:16px}
+.opt-btn{font-family:'Fredoka One',cursive;font-size:1.4rem;padding:18px;border-radius:16px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;cursor:pointer;transition:all 0.2s}
+.opt-btn:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.5);transform:translateY(-2px)}
+.opt-btn.correct{background:rgba(46,204,113,0.4);border-color:#2ecc71;animation:pulse-green 0.5s}
+.opt-btn.wrong{background:rgba(231,76,60,0.4);border-color:#e74c3c;animation:shake 0.4s}
+.opt-btn:disabled{cursor:default}
+@keyframes pulse-green{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.progress-bar{width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:8px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#f7c948,#e67e22);border-radius:8px;transition:width 0.5s ease}
+.phase-label{font-size:0.8rem;color:rgba(255,255,255,0.6);text-align:center}
+.cutscene{text-align:center;padding:20px}
+.cutscene-emoji{font-size:5rem;animation:bounce 0.8s infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-16px)}}
+.cutscene-msg{font-family:'Fredoka One',cursive;font-size:1.5rem;color:#f7c948;margin:12px 0}
+.cutscene-story{font-size:1rem;color:rgba(255,255,255,0.85);line-height:1.6;max-width:500px;margin:0 auto}
+.ranking-table{width:100%;border-collapse:collapse}
+.ranking-table th{font-family:'Fredoka One',cursive;font-size:0.9rem;color:rgba(255,255,255,0.6);text-align:left;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.ranking-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.name-input{font-family:'Nunito',sans-serif;font-size:1.1rem;padding:12px 20px;border-radius:50px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:#fff;width:100%;max-width:320px;text-align:center;outline:none}
+.name-input::placeholder{color:rgba(255,255,255,0.4)}
+.name-input:focus{border-color:#f7c948;background:rgba(255,255,255,0.15)}
+.feedback-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:rgba(0,0,0,0.85);border-radius:20px;padding:24px 40px;text-align:center;z-index:100;transition:transform 0.25s;font-family:'Fredoka One',cursive;font-size:1.6rem}
+.feedback-popup.show{transform:translate(-50%,-50%) scale(1)}
+.feedback-popup.correct-fb{border:2px solid #2ecc71;color:#2ecc71}
+.feedback-popup.wrong-fb{border:2px solid #e74c3c;color:#e74c3c}
+.score-anim{position:fixed;top:40%;left:50%;transform:translateX(-50%);font-family:'Fredoka One',cursive;font-size:2rem;color:#f7c948;pointer-events:none;animation:scoreUp 1.2s forwards}
+@keyframes scoreUp{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-60px)}}
+.tab-bar{display:flex;gap:6px;width:100%;margin-bottom:12px;flex-wrap:wrap}
+.tab-btn{flex:1;padding:10px 6px;border:none;border-radius:12px;cursor:pointer;font-family:'Fredoka One',cursive;font-size:0.88rem;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border-bottom:2px solid transparent;transition:all 0.2s;min-width:70px}
+.tab-btn.active{color:#f7c948;background:rgba(247,201,72,0.12);border-bottom-color:#f7c948}
+.tab-content{display:none;width:100%}
+.tab-content.active{display:block}
+.pw-input{font-family:'Nunito',sans-serif;padding:10px 16px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;width:220px;outline:none;font-size:1rem;text-align:center}
+.pw-input:focus{border-color:#f7c948}
+.results-list{max-height:340px;overflow-y:auto;width:100%;display:flex;flex-direction:column;gap:8px}
+.result-item{background:rgba(255,255,255,0.06);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;flex-wrap:wrap;gap:6px}
+.result-item .rname{font-weight:700;font-size:1rem}
+.result-item .rscore{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#f7c948}
+.chip{background:rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.78rem;color:rgba(255,255,255,0.7)}
+.chip-red{background:rgba(231,76,60,0.2);color:#ff8a7a;border:1px solid rgba(231,76,60,0.3)}
+.gameover-emoji{font-size:5rem;animation:sad 1s infinite alternate}
+@keyframes sad{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+.tip-box{background:rgba(247,201,72,0.1);border:1.5px solid rgba(247,201,72,0.3);border-radius:14px;padding:16px;text-align:left;font-size:0.95rem;line-height:1.6;color:rgba(255,255,255,0.9)}
+.tip-box strong{color:#f7c948}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,0.05)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px}
+.phase-map{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.phase-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1rem;border:2px solid rgba(255,255,255,0.2)}
+.phase-dot.done{background:linear-gradient(135deg,#2ecc71,#27ae60);border-color:#2ecc71}
+.phase-dot.current{background:linear-gradient(135deg,#f7c948,#f39c12);border-color:#f7c948;animation:pulse 1.5s infinite}
+.phase-dot.locked{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(247,201,72,0.4)}50%{box-shadow:0 0 0 8px rgba(247,201,72,0)}}
+.timer-ring{position:relative;width:56px;height:56px}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring .timer-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Fredoka One',cursive;font-size:1.1rem}
+.confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:200}
+.confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{0%{top:-10px;opacity:1;transform:rotate(0deg)}100%{top:110%;opacity:0.3;transform:rotate(720deg)}}
+.errors-toggle{background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.3);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:0.85rem;color:#ff8a7a;display:flex;align-items:center;justify-content:space-between;width:100%;font-family:'Nunito',sans-serif;font-weight:700}
+.errors-toggle:hover{background:rgba(231,76,60,0.22)}
+.errors-list{display:none;flex-direction:column;gap:6px;margin-top:8px}
+.errors-list.open{display:flex}
+.error-row{background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:10px;padding:10px 14px;font-size:0.88rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.error-expr{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#ff8a7a}
+.error-ans{font-family:'Fredoka One',cursive;font-size:1rem;color:#2ecc71}
+.error-wrong{font-family:'Fredoka One',cursive;font-size:1rem;color:#e74c3c;text-decoration:line-through;opacity:0.7}
+.error-meta{font-size:0.75rem;color:rgba(255,255,255,0.4)}
+.erros-player-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 16px;margin-bottom:10px}
+.erros-player-name{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#f7c948;margin-bottom:8px}
+.erros-scroll{max-height:420px;overflow-y:auto;width:100%;display:flex;flex-direction:column;gap:10px}
+/* Sheets status */
+.sheets-status{display:flex;align-items:center;gap:8px;font-size:0.8rem;padding:8px 14px;border-radius:20px;background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.6)}
+.sheets-status .dot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;transition:background 0.3s}
+.sheets-status.ok .dot{background:#2ecc71;animation:blink 2s infinite}
+.sheets-status.err .dot{background:#e74c3c}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.url-input{font-family:'Nunito',sans-serif;font-size:0.82rem;padding:8px 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:#fff;width:100%;outline:none}
+.url-input:focus{border-color:#f7c948}
+.url-input::placeholder{color:rgba(255,255,255,0.3)}
+.info-box{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px 18px;font-size:0.85rem;color:rgba(255,255,255,0.7);line-height:1.7}
+.info-box strong{color:#f7c948}
+.info-box code{background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:0.82rem;color:#a8d8ff}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#f7c948;color:#1a0533;font-weight:800;font-size:0.75rem;margin-right:6px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="stars-bg" id="stars"></div>
+<div id="app">
+
+  <!-- ══ MENU ═══════════════════════════════════════════════ -->
+  <div class="screen active" id="screen-menu">
+    <div style="font-size:4rem;text-align:center;animation:bounce 1s infinite alternate">🏰</div>
+    <h1 style="font-size:2.2rem">Castelo das<br><span style="color:#f7c948">Potências</span></h1>
+    <p style="color:rgba(255,255,255,0.7);text-align:center;font-size:0.95rem">Um jogo de matemática para o 6º ano</p>
+    <div id="sheets-indicator" class="sheets-status">
+      <div class="dot"></div>
+      <span id="sheets-status-txt">Google Sheets: verificando...</span>
+    </div>
+    <div class="card" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
+      <p style="font-weight:700;font-size:1rem">Qual é o seu nome, aventureiro?</p>
+      <input class="name-input" id="player-name" type="text" placeholder="Digite seu nome..." maxlength="20"/>
+      <button class="btn btn-primary" onclick="startGame()" style="font-size:1.2rem;padding:14px 36px">⚔️ Começar Aventura!</button>
+    </div>
+    <div class="phase-map" id="phase-map-menu"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-purple btn-sm" onclick="showScreen('screen-dashboard')">🔒 Área da Professora</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7)" onclick="showScreen('screen-ranking')">🏆 Ranking</button>
+    </div>
+  </div>
+
+  <!-- ══ GAME ════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-game">
+    <div class="hud">
+      <div class="hud-item">
+        <span style="font-size:0.8rem;color:rgba(255,255,255,0.5)">FASE</span>
+        <span id="hud-phase" style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#f7c948">1</span>
+      </div>
+      <div class="hearts" id="hearts-display"></div>
+      <div class="hud-item">
+        <span style="font-size:0.8rem;color:rgba(255,255,255,0.5)">PONTOS</span>
+        <span id="hud-score" style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#2ecc71">0</span>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;width:100%">
+      <div style="padding:12px 16px;background:rgba(0,0,0,0.2);display:flex;justify-content:space-between;align-items:center">
+        <span class="phase-label" id="q-label">Pergunta 1/6</span>
+        <div class="timer-ring">
+          <svg width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+            <circle id="timer-circle" cx="28" cy="28" r="24" fill="none" stroke="#f7c948" stroke-width="4"
+              stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round"/>
+          </svg>
+          <div class="timer-val" id="timer-val">15</div>
+        </div>
+      </div>
+      <div style="padding:8px 16px 4px">
+        <div class="progress-bar"><div class="progress-fill" id="q-progress" style="width:0%"></div></div>
+      </div>
+      <div class="question-box">
+        <p id="q-topic" style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:4px"></p>
+        <p id="q-text" style="font-size:1rem;color:rgba(255,255,255,0.8)"></p>
+        <div class="question-expr" id="q-expr"></div>
+        <div class="options-grid" id="options-grid"></div>
+      </div>
+    </div>
+    <div class="tip-box" id="tip-area" style="display:none"></div>
+  </div>
+
+  <!-- ══ CUTSCENE ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-cutscene">
+    <div class="card cutscene">
+      <div class="cutscene-emoji" id="cut-emoji">🏆</div>
+      <div class="cutscene-msg" id="cut-title">Fase Concluída!</div>
+      <p class="cutscene-story" id="cut-story"></p>
+      <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="font-family:'Fredoka One',cursive;font-size:2rem;color:#f7c948" id="cut-score-delta">+0</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5)">pontos nesta fase</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Fredoka One',cursive;font-size:2rem;color:#2ecc71" id="cut-total">0</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5)">total</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:20px" id="cut-next-btn" onclick="nextPhase()">Próxima Fase ➡️</button>
+    </div>
+  </div>
+
+  <!-- ══ GAME OVER ═══════════════════════════════════════════ -->
+  <div class="screen" id="screen-gameover">
+    <div class="gameover-emoji">💀</div>
+    <h2 style="color:#e74c3c">Fim de Jogo!</h2>
+    <div class="card" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+      <p id="go-name" style="font-size:1rem;font-weight:700"></p>
+      <div style="font-family:'Fredoka One',cursive;font-size:2.5rem;color:#f7c948" id="go-score">0</div>
+      <div style="font-size:0.9rem;color:rgba(255,255,255,0.6)" id="go-phase"></div>
+      <div class="tip-box" id="go-tip"></div>
+      <div id="go-sheets-msg" style="font-size:0.82rem;color:rgba(255,255,255,0.5);padding:6px 14px;background:rgba(0,0,0,0.2);border-radius:20px;display:none"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+        <button class="btn btn-primary" onclick="restartGame()">🔄 Tentar Novamente</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:#fff" onclick="showScreen('screen-ranking')">🏆 Ranking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VICTORY ═════════════════════════════════════════════ -->
+  <div class="screen" id="screen-victory">
+    <div style="font-size:5rem;text-align:center;animation:bounce 0.7s infinite alternate">🏆</div>
+    <h2 style="color:#f7c948;font-size:2rem">Você é um Mestre<br>das Potências!</h2>
+    <div class="card" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+      <p id="v-name" style="font-weight:700;font-size:1.1rem"></p>
+      <div style="font-family:'Fredoka One',cursive;font-size:3rem;color:#f7c948" id="v-score">0</div>
+      <div style="font-size:0.85rem;color:rgba(255,255,255,0.6)">pontos totais — todas as fases!</div>
+      <div id="v-stars" style="font-size:2rem"></div>
+      <div id="v-sheets-msg" style="font-size:0.82rem;color:rgba(255,255,255,0.5);padding:6px 14px;background:rgba(0,0,0,0.2);border-radius:20px;display:none"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+        <button class="btn btn-primary" onclick="restartGame()">🔄 Jogar Novamente</button>
+        <button class="btn btn-purple" onclick="showScreen('screen-ranking')">🏆 Ver Ranking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RANKING ═════════════════════════════════════════════ -->
+  <div class="screen" id="screen-ranking">
+    <h2>🏆 Ranking da Turma</h2>
+    <div class="card" style="padding:16px;width:100%">
+      <div id="ranking-list" style="min-height:120px"></div>
+    </div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:#fff" onclick="showScreen('screen-menu')">← Voltar</button>
+  </div>
+
+  <!-- ══ DASHBOARD ═══════════════════════════════════════════ -->
+  <div class="screen" id="screen-dashboard">
+    <h2>🔒 Área da Professora</h2>
+    <div class="card" id="dash-login" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
+      <p style="color:rgba(255,255,255,0.7);font-size:0.95rem">Digite a senha para acessar</p>
+      <input class="pw-input" id="pw-input" type="password" placeholder="Senha..." onkeydown="if(event.key==='Enter')dashLogin()"/>
+      <button class="btn btn-purple" onclick="dashLogin()">🔓 Entrar</button>
+    </div>
+    <div class="card" id="dash-content" style="display:none;width:100%;padding:16px">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-results')">📋 Partidas</button>
+        <button class="tab-btn" onclick="switchTab('tab-errors')">❌ Erros</button>
+        <button class="tab-btn" onclick="switchTab('tab-ranking')">🏆 Ranking</button>
+        <button class="tab-btn" onclick="switchTab('tab-sheets')">📊 Sheets</button>
+        <button class="tab-btn" onclick="switchTab('tab-info')">ℹ️ Info</button>
+      </div>
+      <!-- Partidas -->
+      <div class="tab-content active" id="tab-results">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:0.9rem;color:rgba(255,255,255,0.6)" id="dash-stats"></div>
+          <button class="btn btn-red btn-sm" onclick="clearData()">🗑️ Limpar</button>
+        </div>
+        <div class="results-list" id="results-list"></div>
+      </div>
+      <!-- Erros -->
+      <div class="tab-content" id="tab-errors">
+        <div style="margin-bottom:12px;font-size:0.9rem;color:rgba(255,255,255,0.6)">Questões erradas por aluno</div>
+        <div class="erros-scroll" id="errors-by-player"></div>
+      </div>
+      <!-- Ranking -->
+      <div class="tab-content" id="tab-ranking">
+        <div id="dash-ranking-list" style="min-height:120px"></div>
+      </div>
+      <!-- Google Sheets config -->
+      <div class="tab-content" id="tab-sheets">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <p style="font-size:0.9rem;color:rgba(255,255,255,0.7)">Cole aqui a URL do seu Google Apps Script para enviar os resultados automaticamente para a planilha:</p>
+          <input class="url-input" id="sheets-url-input" type="text" placeholder="https://script.google.com/macros/s/SEU_ID/exec"/>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-green btn-sm" onclick="saveSheetUrl()">💾 Salvar URL</button>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:#fff" onclick="testSheetUrl()">🧪 Testar conexão</button>
+          </div>
+          <div id="url-test-result" style="font-size:0.85rem;color:rgba(255,255,255,0.5);min-height:20px"></div>
+        </div>
+      </div>
+      <!-- Info -->
+      <div class="tab-content" id="tab-info">
+        <div class="info-box">
+          <strong>Como publicar no GitHub Pages (grátis):</strong><br><br>
+          <span><span class="step-num">1</span>Salve este arquivo como <code>index.html</code></span><br>
+          <span><span class="step-num">2</span>Crie conta gratuita em <strong>github.com</strong></span><br>
+          <span><span class="step-num">3</span>Crie um repositório e faça upload do arquivo</span><br>
+          <span><span class="step-num">4</span>Vá em <strong>Settings → Pages</strong> e ative</span><br>
+          <span><span class="step-num">5</span>Compartilhe o link com os alunos!</span><br><br>
+          <strong>Senha da área da professora:</strong> <code>Carolzinha@123</code>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:#fff" onclick="showScreen('screen-menu')">← Voltar</button>
+  </div>
+
+</div>
+<div class="feedback-popup" id="feedback-popup"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIGURAÇÃO — cole a URL do Apps Script aqui
+//  (ou configure pela Área da Professora → Sheets)
+// ══════════════════════════════════════════════
+var SHEETS_URL = localStorage.getItem('potenciacao_sheets_url') || '';
+
+var DASH_PASSWORD = 'Carolzinha@123';
+
+var PHASES = [
+  {name:'Dungeon dos Quadrados',emoji:'🗡️',
+   story:'Você adentra a masmorra! Os monstros são derrubados com quadrados perfeitos.',
+   winStory:'Incrível! Você dominou os quadrados e derrotou os trolls da masmorra!',
+   topic:'Quadrados (expoente 2)',tip:'Lembre: a² = a × a. Exemplo: 3² = 3 × 3 = 9'},
+  {name:'Floresta dos Cubos',emoji:'🌲',
+   story:'A floresta encantada esconde elfos que só falam em cubos. a³ = a × a × a.',
+   winStory:'Os elfos te reconhecem como um mago dos cubos!',
+   topic:'Cubos (expoente 3)',tip:'Lembre: a³ = a × a × a. Exemplo: 2³ = 2×2×2 = 8'},
+  {name:'Rio das Potências Mistas',emoji:'🌊',
+   story:'O rio mágico mistura bases e expoentes. Calcule para cruzar as pedras!',
+   winStory:'Você atravessou o rio sem se molhar!',
+   topic:'Potências variadas',tip:'Lembre: aⁿ = a multiplicado por si mesmo n vezes'},
+  {name:'Torre dos Desafios',emoji:'🏯',
+   story:'A torre do feiticeiro exige potências de números maiores. Concentre-se!',
+   winStory:'A torre foi conquistada! O feiticeiro reconhece seu talento!',
+   topic:'Potências maiores',tip:'Dica: calcule passo a passo. 4³ = 4×4×4 = 16×4 = 64'},
+  {name:'Castelo Final',emoji:'👑',
+   story:'O desafio final! O Rei dos Números testa todo o seu conhecimento!',
+   winStory:'VOCÊ VENCEU O CASTELO DAS POTÊNCIAS! Mestre da Matemática!',
+   topic:'Desafio Final — tudo junto!',tip:'Confie em si mesmo! aⁿ = a × a × ... (n vezes)'}
+];
+
+// ─── Geração de questões ───────────────────────
+function genQuestions(pi){
+  var pool=[];
+  if(pi===0){[2,3,4,5,6,7,8,9,10,11,12].forEach(function(b){pool.push({base:b,exp:2,ans:b*b});});}
+  else if(pi===1){[2,3,4,5,6,7,8,9,10].forEach(function(b){pool.push({base:b,exp:3,ans:b*b*b});});}
+  else if(pi===2){[[2,4],[2,5],[2,6],[3,4],[3,5],[4,4],[5,4],[6,4],[7,3],[8,2],[9,2],[10,3],[11,2],[12,2]].forEach(function(p){pool.push({base:p[0],exp:p[1],ans:Math.pow(p[0],p[1])});});}
+  else if(pi===3){[[3,4],[4,3],[4,4],[5,3],[5,4],[6,3],[7,4],[8,3],[9,3],[10,4],[2,7],[2,8],[3,5],[4,5]].forEach(function(p){pool.push({base:p[0],exp:p[1],ans:Math.pow(p[0],p[1])});});}
+  else{[[2,9],[2,10],[3,6],[3,7],[4,5],[5,5],[6,4],[7,4],[8,4],[9,4],[10,5],[4,6],[5,4],[3,8]].forEach(function(p){pool.push({base:p[0],exp:p[1],ans:Math.pow(p[0],p[1])});});}
+  pool=shuffle(pool).slice(0,6);
+  return pool.map(function(q){return{base:q.base,exp:q.exp,ans:q.ans,opts:shuffle([q.ans].concat(genWrong(q.base,q.exp,q.ans)))};});
+}
+
+function genWrong(base,exp,ans){
+  var s=new Set([ans]);
+  var cands=[base*exp,base+exp,ans+base,ans-base,Math.pow(base,exp-1),Math.pow(base+1,exp),ans*2,Math.round(ans*1.5),ans+1,ans-1,base*base].filter(function(v){return v>0&&v!==ans&&!s.has(v);});
+  var res=[];
+  for(var i=0;i<cands.length&&res.length<3;i++){if(!s.has(cands[i])){s.add(cands[i]);res.push(cands[i]);}}
+  while(res.length<3){var v=ans+Math.floor(Math.random()*10)+1;if(!s.has(v)){s.add(v);res.push(v);}}
+  return res.slice(0,3);
+}
+
+function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+// ─── Estado ───────────────────────────────────
+var state={playerName:'',phase:0,score:0,hearts:3,qIdx:0,questions:[],phaseScore:0,timerInterval:null,timerVal:15,answered:false,sessionErrors:[]};
+
+// ─── Iniciar jogo ─────────────────────────────
+function startGame(){
+  var name=document.getElementById('player-name').value.trim();
+  if(!name){alert('Digite seu nome antes de começar!');return;}
+  state.playerName=name;state.phase=0;state.score=0;state.hearts=3;state.qIdx=0;state.phaseScore=0;state.sessionErrors=[];
+  state.questions=genQuestions(0);
+  showScreen('screen-game');renderQuestion();
+}
+function restartGame(){showScreen('screen-menu');}
+
+// ─── Renderizar questão ───────────────────────
+function renderQuestion(){
+  var q=state.questions[state.qIdx];var p=PHASES[state.phase];
+  document.getElementById('hud-phase').textContent=state.phase+1;
+  document.getElementById('hud-score').textContent=state.score;
+  document.getElementById('q-label').textContent='Pergunta '+(state.qIdx+1)+'/'+state.questions.length;
+  document.getElementById('q-topic').textContent=p.topic;
+  document.getElementById('q-text').textContent='Quanto vale:';
+  document.getElementById('q-expr').innerHTML=q.base+'<sup>'+q.exp+'</sup> = ?';
+  document.getElementById('q-progress').style.width=(state.qIdx/state.questions.length*100)+'%';
+  renderHearts();
+  var grid=document.getElementById('options-grid');grid.innerHTML='';
+  q.opts.forEach(function(opt){
+    var btn=document.createElement('button');btn.className='opt-btn';btn.textContent=opt;
+    btn.onclick=function(){handleAnswer(opt,q.ans,btn,q);};
+    grid.appendChild(btn);
+  });
+  document.getElementById('tip-area').style.display='none';
+  state.answered=false;startTimer();
+}
+
+// ─── Timer ────────────────────────────────────
+function startTimer(){
+  clearInterval(state.timerInterval);state.timerVal=15;updateTimerDisplay();
+  state.timerInterval=setInterval(function(){state.timerVal--;updateTimerDisplay();if(state.timerVal<=0){clearInterval(state.timerInterval);timeUp();}},1000);
+}
+function updateTimerDisplay(){
+  var circ=document.getElementById('timer-circle');var val=document.getElementById('timer-val');if(!circ||!val)return;
+  var pct=state.timerVal/15;circ.style.strokeDashoffset=150.8*(1-pct);
+  circ.style.stroke=pct>0.5?'#f7c948':pct>0.25?'#e67e22':'#e74c3c';val.textContent=state.timerVal;
+}
+function timeUp(){
+  if(state.answered)return;state.answered=true;
+  var q=state.questions[state.qIdx];
+  recordError(q,'(tempo esgotado)');loseHeart();showFeedback(false,'⏰ Tempo! Era '+q.ans);
+  document.querySelectorAll('.opt-btn').forEach(function(b){b.disabled=true;if(parseInt(b.textContent)===q.ans)b.classList.add('correct');});
+  document.getElementById('tip-area').style.display='block';
+  document.getElementById('tip-area').innerHTML='<strong>💡 Dica:</strong> '+PHASES[state.phase].tip+'<br><strong>'+q.base+exp2sup(q.exp)+' = '+q.ans+'</strong>';
+  if(state.hearts<=0){setTimeout(gameOver,1800);}else{setTimeout(nextQuestion,2200);}
+}
+
+// ─── Responder questão ────────────────────────
+function handleAnswer(chosen,correct,btn,q){
+  if(state.answered)return;state.answered=true;clearInterval(state.timerInterval);
+  document.querySelectorAll('.opt-btn').forEach(function(b){b.disabled=true;});
+  if(chosen===correct){
+    btn.classList.add('correct');
+    var bonus=state.timerVal>10?150:state.timerVal>5?100:75;
+    state.score+=bonus;state.phaseScore+=bonus;
+    showScoreAnim('+'+bonus);showFeedback(true,'✅ Correto!');
+    setTimeout(nextQuestion,1400);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(function(b){if(parseInt(b.textContent)===correct)b.classList.add('correct');});
+    recordError(q,chosen);loseHeart();showFeedback(false,'❌ Era '+correct);
+    document.getElementById('tip-area').style.display='block';
+    document.getElementById('tip-area').innerHTML='<strong>💡 Dica:</strong> '+PHASES[state.phase].tip+'<br><strong>'+q.base+exp2sup(q.exp)+' = '+q.ans+'</strong>';
+    if(state.hearts<=0){setTimeout(gameOver,1800);}else{setTimeout(nextQuestion,2000);}
+  }
+}
+
+function recordError(q,chosen){
+  state.sessionErrors.push({base:q.base,exp:q.exp,ans:q.ans,chosen:chosen,phase:state.phase+1,phaseName:PHASES[state.phase].name});
+}
+function exp2sup(e){var s=['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];return e<10?s[e]:String(e);}
+function nextQuestion(){state.qIdx++;if(state.qIdx>=state.questions.length){phaseComplete();}else{renderQuestion();}}
+
+// ─── Fase completa ────────────────────────────
+function phaseComplete(){
+  var p=PHASES[state.phase];
+  document.getElementById('cut-emoji').textContent=p.emoji;
+  document.getElementById('cut-title').textContent='Fase '+(state.phase+1)+' Concluída! '+p.name;
+  document.getElementById('cut-story').textContent=p.winStory;
+  document.getElementById('cut-score-delta').textContent='+'+state.phaseScore;
+  document.getElementById('cut-total').textContent=state.score;
+  if(state.phase>=PHASES.length-1){
+    document.getElementById('cut-next-btn').textContent='🏆 Ver Resultado Final!';
+    document.getElementById('cut-next-btn').onclick=victory;
+  } else {
+    document.getElementById('cut-next-btn').textContent='Próxima Fase ➡️';
+    document.getElementById('cut-next-btn').onclick=nextPhase;
+  }
+  spawnConfetti();showScreen('screen-cutscene');
+}
+function nextPhase(){
+  state.phase++;if(state.phase>=PHASES.length){victory();return;}
+  state.qIdx=0;state.phaseScore=0;state.questions=genQuestions(state.phase);
+  showScreen('screen-game');renderQuestion();
+}
+
+// ─── Vitória ──────────────────────────────────
+function victory(){
+  saveResult('victory');
+  document.getElementById('v-name').textContent='Parabéns, '+state.playerName+'!';
+  document.getElementById('v-score').textContent=state.score;
+  document.getElementById('v-stars').textContent=state.score>2000?'⭐⭐⭐':state.score>1200?'⭐⭐':'⭐';
+  spawnConfetti();showScreen('screen-victory');
+}
+
+// ─── Game over ────────────────────────────────
+function gameOver(){
+  saveResult('gameover');
+  document.getElementById('go-name').textContent=state.playerName+' — Fase '+(state.phase+1);
+  document.getElementById('go-score').textContent=state.score;
+  document.getElementById('go-phase').textContent='Você ficou na fase "'+PHASES[state.phase].name+'"';
+  document.getElementById('go-tip').innerHTML='<strong>💡 Para estudar:</strong><br>'+PHASES[state.phase].tip;
+  showScreen('screen-gameover');
+}
+
+// ─── Salvar resultado (local + Sheets) ────────
+function saveResult(type){
+  var results=getResults();
+  results.push({name:state.playerName,score:state.score,phase:state.phase+1,type:type,date:new Date().toLocaleString('pt-BR'),errors:state.sessionErrors});
+  try{localStorage.setItem('potenciacao_results',JSON.stringify(results));}catch(e){}
+  sendToSheets({name:state.playerName,score:state.score,phase:state.phase+1,type:type,errors:state.sessionErrors},type);
+}
+
+// ─── Google Sheets ────────────────────────────
+function sendToSheets(data,type){
+  var url=SHEETS_URL;
+  if(!url){updateSheetsMsg(type,'⚠️ URL do Sheets não configurada');return;}
+  var msgId=type==='victory'?'v-sheets-msg':'go-sheets-msg';
+  var el=document.getElementById(msgId);
+  if(el){el.style.display='block';el.textContent='📤 Enviando para o Google Sheets...';}
+  fetch(url,{method:'POST',body:JSON.stringify(data)})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(el){el.textContent=res.status==='ok'?'✅ Resultado salvo na planilha da professora!':'⚠️ Erro ao salvar: '+res.msg;}
+    })
+    .catch(function(){
+      if(el){el.textContent='⚠️ Não foi possível enviar ao Sheets. Verifique a URL.';}
+    });
+}
+
+function updateSheetsMsg(type,msg){
+  var msgId=type==='victory'?'v-sheets-msg':'go-sheets-msg';
+  var el=document.getElementById(msgId);
+  if(el){el.style.display='block';el.textContent=msg;}
+}
+
+function checkSheetsConnection(){
+  var url=SHEETS_URL;
+  var ind=document.getElementById('sheets-indicator');
+  var txt=document.getElementById('sheets-status-txt');
+  if(!url){
+    ind.className='sheets-status';txt.textContent='Google Sheets: URL não configurada';return;
+  }
+  txt.textContent='Google Sheets: verificando...';
+  fetch(url).then(function(r){return r.json();}).then(function(){
+    ind.className='sheets-status ok';txt.textContent='Google Sheets: conectado ✓';
+  }).catch(function(){
+    ind.className='sheets-status err';txt.textContent='Google Sheets: sem conexão';
+  });
+}
+
+function saveSheetUrl(){
+  var val=document.getElementById('sheets-url-input').value.trim();
+  if(!val){alert('Digite a URL primeiro!');return;}
+  SHEETS_URL=val;
+  try{localStorage.setItem('potenciacao_sheets_url',val);}catch(e){}
+  document.getElementById('url-test-result').textContent='✅ URL salva! Clique em "Testar conexão" para verificar.';
+  checkSheetsConnection();
+}
+
+function testSheetUrl(){
+  var url=document.getElementById('sheets-url-input').value.trim()||SHEETS_URL;
+  var res=document.getElementById('url-test-result');
+  if(!url){res.textContent='⚠️ Cole a URL primeiro.';return;}
+  res.textContent='🔄 Testando...';
+  fetch(url).then(function(r){return r.json();}).then(function(d){
+    res.textContent='✅ Conexão OK! Resposta: '+d.msg;
+    res.style.color='#2ecc71';
+  }).catch(function(){
+    res.textContent='❌ Erro de conexão. Verifique se a URL está correta e se a implantação está como "Qualquer pessoa".';
+    res.style.color='#e74c3c';
+  });
+}
+
+// ─── Utilitários ──────────────────────────────
+function loseHeart(){state.hearts=Math.max(0,state.hearts-1);renderHearts();}
+function renderHearts(){
+  var hd=document.getElementById('hearts-display');hd.innerHTML='';
+  for(var i=0;i<3;i++){var s=document.createElement('span');s.className='heart'+(i>=state.hearts?' lost':'');s.textContent='❤️';hd.appendChild(s);}
+}
+function showFeedback(correct,msg){
+  var el=document.getElementById('feedback-popup');el.textContent=msg;
+  el.className='feedback-popup show '+(correct?'correct-fb':'wrong-fb');
+  setTimeout(function(){el.className='feedback-popup';},1200);
+}
+function showScoreAnim(txt){
+  var el=document.createElement('div');el.className='score-anim';el.textContent=txt;document.body.appendChild(el);
+  setTimeout(function(){el.remove();},1200);
+}
+function getResults(){try{return JSON.parse(localStorage.getItem('potenciacao_results')||'[]');}catch(e){return[];}}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  if(id==='screen-ranking')renderRanking();
+  if(id==='screen-menu'){renderPhaseMap();checkSheetsConnection();}
+  if(id==='screen-dashboard'){
+    var inp=document.getElementById('sheets-url-input');
+    if(inp&&SHEETS_URL)inp.value=SHEETS_URL;
+  }
+}
+
+function renderPhaseMap(){
+  var m=document.getElementById('phase-map-menu');m.innerHTML='';
+  PHASES.forEach(function(_,i){var d=document.createElement('div');d.className='phase-dot locked';d.textContent=i+1;m.appendChild(d);});
+}
+
+function renderRanking(){
+  var results=getResults();var byPlayer={};
+  results.forEach(function(r){if(!byPlayer[r.name]||r.score>byPlayer[r.name].score)byPlayer[r.name]=r;});
+  var sorted=Object.values(byPlayer).sort(function(a,b){return b.score-a.score;});
+  var medals=['🥇','🥈','🥉'];var el=document.getElementById('ranking-list');if(!el)return;
+  if(sorted.length===0){el.innerHTML='<p style="color:rgba(255,255,255,0.4);text-align:center;padding:24px">Nenhuma partida ainda!</p>';return;}
+  el.innerHTML='<table class="ranking-table"><thead><tr><th>#</th><th>Nome</th><th>Pontos</th><th>Fase</th></tr></thead><tbody>'+
+    sorted.slice(0,10).map(function(r,i){return '<tr><td style="font-family:Fredoka One,cursive;width:32px;text-align:center">'+(i<3?medals[i]:i+1)+'</td><td>'+r.name+'</td><td style="font-family:Fredoka One,cursive;color:#f7c948">'+r.score+'</td><td><span class="chip">F'+r.phase+'</span></td></tr>';}).join('')+
+    '</tbody></table>';
+}
+
+// ─── Dashboard ────────────────────────────────
+function dashLogin(){
+  if(document.getElementById('pw-input').value===DASH_PASSWORD){
+    document.getElementById('dash-login').style.display='none';
+    document.getElementById('dash-content').style.display='block';
+    loadDashData();
+  } else {
+    document.getElementById('pw-input').style.borderColor='#e74c3c';
+    setTimeout(function(){document.getElementById('pw-input').style.borderColor='';},1200);
+    alert('Senha incorreta!');
+  }
+}
+
+function loadDashData(){
+  var results=getResults();
+  document.getElementById('dash-stats').textContent=results.length+' partida(s) — '+new Set(results.map(function(r){return r.name;})).size+' aluno(s)';
+  var rl=document.getElementById('results-list');rl.innerHTML='';
+  if(results.length===0){rl.innerHTML='<p style="color:rgba(255,255,255,0.4);text-align:center;padding:24px">Sem resultados ainda.</p>';}
+  else{[...results].reverse().forEach(function(r){
+    var ec=(r.errors||[]).length;var d=document.createElement('div');d.className='result-item';
+    d.innerHTML='<div><div class="rname">'+r.name+'</div><div style="font-size:0.78rem;color:rgba(255,255,255,0.4)">'+r.date+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip">F'+r.phase+'</span>'+(ec>0?'<span class="chip chip-red">❌ '+ec+' erro(s)</span>':'')+'<span class="chip">'+(r.type==='victory'?'✅ Vitória':'💀 Game Over')+'</span><span class="rscore">'+r.score+'</span></div>';
+    rl.appendChild(d);
+  });}
+  renderErrorsByPlayer(results);
+  var byPlayer={};results.forEach(function(r){if(!byPlayer[r.name]||r.score>byPlayer[r.name].score)byPlayer[r.name]=r;});
+  var sorted=Object.values(byPlayer).sort(function(a,b){return b.score-a.score;});var medals=['🥇','🥈','🥉'];
+  var drk=document.getElementById('dash-ranking-list');
+  drk.innerHTML=sorted.length===0?'<p style="color:rgba(255,255,255,0.4);text-align:center;padding:24px">Nenhuma partida ainda!</p>':
+    '<table class="ranking-table"><thead><tr><th>#</th><th>Nome</th><th>Melhor</th><th>Fase</th></tr></thead><tbody>'+
+    sorted.slice(0,15).map(function(r,i){return '<tr><td style="font-family:Fredoka One,cursive;width:32px;text-align:center">'+(i<3?medals[i]:i+1)+'</td><td>'+r.name+'</td><td style="font-family:Fredoka One,cursive;color:#f7c948">'+r.score+'</td><td><span class="chip">F'+r.phase+'</span></td></tr>';}).join('')+
+    '</tbody></table>';
+}
+
+function renderErrorsByPlayer(results){
+  var container=document.getElementById('errors-by-player');container.innerHTML='';
+  var byPlayer={};
+  results.forEach(function(r){(r.errors||[]).forEach(function(e){if(!byPlayer[r.name])byPlayer[r.name]=[];byPlayer[r.name].push(e);});});
+  var players=Object.keys(byPlayer);
+  if(players.length===0){container.innerHTML='<p style="color:rgba(255,255,255,0.4);text-align:center;padding:24px">Nenhum erro registrado ainda.</p>';return;}
+  players.forEach(function(name){
+    var errs=byPlayer[name];var exprMap={};
+    errs.forEach(function(e){var key=e.base+'^'+e.exp;if(!exprMap[key])exprMap[key]={base:e.base,exp:e.exp,ans:e.ans,wrongs:[],count:0,phases:[]};exprMap[key].count++;if(e.chosen!=='(tempo esgotado)')exprMap[key].wrongs.push(e.chosen);if(exprMap[key].phases.indexOf('Fase '+e.phase)===-1)exprMap[key].phases.push('Fase '+e.phase);});
+    var exprs=Object.values(exprMap).sort(function(a,b){return b.count-a.count;});
+    var listId='err-list-'+name.replace(/\s/g,'_');
+    var card=document.createElement('div');card.className='erros-player-card';
+    card.innerHTML='<div class="erros-player-name">'+name+' <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);font-family:Nunito,sans-serif;font-weight:400">('+errs.length+' erro(s))</span></div>'+
+      '<button class="errors-toggle" onclick="toggleErrors(\''+listId+'\',this)"><span>Ver questões erradas</span><span>▼</span></button>'+
+      '<div class="errors-list" id="'+listId+'">'+
+      exprs.map(function(e){var wu=[...new Set(e.wrongs)];return '<div class="error-row"><div><div class="error-expr">'+e.base+'<sup>'+e.exp+'</sup> = ?</div><div class="error-meta">'+e.phases.join(', ')+' · '+e.count+'× errou</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div style="display:flex;align-items:center;gap:8px">'+(wu.length?'<span class="error-wrong">'+wu.join(', ')+'</span>':'')+'<span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">→</span><span class="error-ans">'+e.ans+'</span></div><div style="font-size:0.72rem;color:rgba(255,255,255,0.35)">resposta correta</div></div></div>';}).join('')+
+      '</div>';
+    container.appendChild(card);
+  });
+}
+
+function toggleErrors(id,btn){
+  var el=document.getElementById(id);var isOpen=el.classList.toggle('open');
+  btn.querySelector('span:last-child').textContent=isOpen?'▲':'▼';
+  btn.querySelector('span:first-child').textContent=isOpen?'Ocultar questões':'Ver questões erradas';
+}
+
+function switchTab(tabId){
+  var tabs=['tab-results','tab-errors','tab-ranking','tab-sheets','tab-info'];
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',tabs[i]===tabId);});
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.toggle('active',t.id===tabId);});
+}
+
+function clearData(){
+  if(confirm('Tem certeza? Todos os resultados serão apagados!')){
+    try{localStorage.removeItem('potenciacao_results');}catch(e){}loadDashData();
+  }
+}
+
+function spawnConfetti(){
+  var colors=['#f7c948','#2ecc71','#9b59b6','#e74c3c','#3498db','#f39c12','#1abc9c'];
+  var cf=document.querySelector('.confetti')||(function(){var d=document.createElement('div');d.className='confetti';document.body.appendChild(d);return d;})();
+  cf.innerHTML='';
+  for(var i=0;i<60;i++){var p=document.createElement('div');p.className='confetti-piece';p.style.cssText='left:'+Math.random()*100+'%;background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-duration:'+(1.5+Math.random()*2)+'s;animation-delay:'+Math.random()*0.8+'s;border-radius:'+(Math.random()>0.5?'50%':'2px');cf.appendChild(p);}
+  setTimeout(function(){cf.innerHTML='';},3500);
+}
+
+function initStars(){
+  var sb=document.getElementById('stars');
+  for(var i=0;i<80;i++){var s=document.createElement('div');s.className='star';s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;animation-delay:'+Math.random()*3+'s;animation-duration:'+(2+Math.random()*3)+'s';sb.appendChild(s);}
+}
+
+initStars();renderPhaseMap();checkSheetsConnection();
+</script>
+</body>
+</html>
